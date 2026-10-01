@@ -1,4 +1,4 @@
-﻿const API_URL = 'https://functions.yandexcloud.net/d4e3ehsvbv2cm4ra8bcn'; // ← ЗАМЕНИТЕ
+﻿const API_URL = 'https://functions.yandexcloud.net/d4eej7tb7kcp63odjnkg'; // ← ЗАМЕНИТЕ
 const AUTH_TOKEN = 'xWsdsK9mP2vL8nQ4wR7tY1uB4556sderzFgt'; // ← ЗАМЕНИТЕ (должен совпадать с SECRET_TOKEN)
 
 const DEFAULT_WATCHLIST = {
