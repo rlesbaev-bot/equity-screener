@@ -1,0 +1,60 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Настройки — RU Equity Screener</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; padding: 16px; }
+    .header { background: #1a1a2e; color: #fff; padding: 16px; margin: -16px -16px 16px -16px; }
+    .header h1 { font-size: 18px; }
+    .back-btn { display: inline-block; margin-top: 8px; color: #aaa; text-decoration: none; font-size: 14px; }
+    .section { background: #fff; padding: 16px; border-radius: 8px; margin-bottom: 16px; }
+    .section h2 { font-size: 16px; margin-bottom: 12px; }
+    .section .hint { font-size: 12px; color: #666; margin-bottom: 12px; }
+    .quick-add { display: flex; gap: 8px; margin-bottom: 8px; }
+    .quick-add input { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; text-transform: uppercase; }
+    .quick-add button { padding: 10px 16px; background: #1a1a2e; color: #fff; border: none; border-radius: 6px; font-size: 14px; cursor: pointer; }
+    .quick-add-hint { font-size: 11px; color: #888; margin-bottom: 16px; }
+    .quick-add-hint .known { color: #2e7d32; font-weight: 600; }
+    .quick-add-hint .unknown { color: #f57f17; font-weight: 600; }
+    #quickAddFeedback { font-size: 12px; margin-top: 4px; min-height: 16px; }
+    .watchlist-item { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; padding: 8px; background: #fafafa; border-radius: 6px; }
+    .watchlist-item input { padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
+    .watchlist-item .ticker-input { width: 80px; font-weight: 700; text-transform: uppercase; background: #f0f0f0; }
+    .watchlist-item .keywords-input { flex: 1; }
+    .watchlist-item .remove-btn { padding: 6px 12px; background: #c62828; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 16px; }
+    .save-btn { width: 100%; padding: 14px; background: #2e7d32; color: #fff; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; margin-top: 16px; }
+    .reset-btn { width: 100%; padding: 10px; background: #fff; color: #666; border: 1px solid #ccc; border-radius: 6px; font-size: 13px; cursor: pointer; margin-top: 8px; }
+    .status { margin-top: 12px; padding: 10px; border-radius: 4px; text-align: center; font-size: 14px; }
+    .status.success { background: #e8f5e9; color: #2e7d32; }
+    .status.error { background: #ffebee; color: #c62828; }
+    .empty-list { text-align: center; padding: 20px; color: #999; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>⚙ Настройки портфеля</h1>
+    <a href="index.html" class="back-btn">← Назад к новостям</a>
+  </div>
+  <div class="section">
+    <h2>Быстрое добавление</h2>
+    <div class="quick-add">
+      <input type="text" id="quickTickerInput" placeholder="Тикер (например, TATN)">
+      <button id="quickAddBtn">+ Добавить</button>
+    </div>
+    <div id="quickAddFeedback"></div>
+    <div class="quick-add-hint" id="quickAddHint">💡 Для популярных тикеров ключевые слова подставятся автоматически.</div>
+  </div>
+  <div class="section">
+    <h2>Ваш watchlist</h2>
+    <div class="hint">Можно редактировать тикеры и ключевые слова. Ключевые слова — через запятую.</div>
+    <div id="watchlistContainer"><div class="empty-list">Список пуст. Добавьте тикеры выше.</div></div>
+  </div>
+  <button class="save-btn" id="saveBtn">💾 Сохранить портфель</button>
+  <button class="reset-btn" id="resetBtn">Сбросить к дефолтному списку</button>
+  <div id="status"></div>
+  <script src="settings.js"></script>
+</body>
+</html>

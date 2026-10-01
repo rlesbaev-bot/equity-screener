@@ -1,0 +1,151 @@
+﻿const TICKER_DICTIONARY = {
+  "SBER": ["Сбербанк", "Сбер", "Sberbank"], "LKOH": ["Лукойл", "Lukoil"],
+  "GAZP": ["Газпром", "Gazprom"], "YNDX": ["Яндекс", "Yandex"],
+  "GMKN": ["Норникель", "Норильский никель", "Nornickel"], "ROSN": ["Роснефть", "Rosneft"],
+  "NVTK": ["Новатэк", "Novatek"], "MTSS": ["МТС", "Mobile TeleSystems"],
+  "MGNT": ["Магнит", "Magnit"], "PLZL": ["Полюс", "Polyus"],
+  "TATN": ["Татнефть", "Tatneft"], "BANE": ["Башнефть", "Bashneft"],
+  "SIBN": ["Газпром нефть", "Gazprom Neft"], "CHMF": ["Северсталь", "Severstal"],
+  "NLMK": ["НЛМК"], "MMKK": ["ММК", "Магнитогорский металлургический"],
+  "ALRS": ["Алроса", "Alrosa"], "PHOR": ["ФосАгро", "PhosAgro"],
+  "VTBR": ["ВТБ", "Банк ВТБ"], "TCSG": ["Тинькофф", "TCS Group", "Т-Банк"],
+  "MOEX": ["Мосбиржа", "Moscow Exchange"], "VKCO": ["VK", "ВКонтакте"],
+  "OZON": ["Ozon", "Озон"], "FIVE": ["X5 Group", "Пятёрочка", "Перекрёсток"],
+  "AFLT": ["Аэрофлот"], "RTKM": ["Ростелеком"], "HYDR": ["РусГидро"],
+  "IRAO": ["Интер РАО"], "RUAL": ["Русал", "Rusal"], "SMLT": ["Самолёт", "Самолет"]
+};
+
+const DEFAULT_WATCHLIST = {
+  "SBER": ["Сбербанк", "Сбер", "Sberbank"], "LKOH": ["Лукойл", "Lukoil"],
+  "GAZP": ["Газпром", "Gazprom"], "YNDX": ["Яндекс", "Yandex"],
+  "GMKN": ["Норникель", "Норильский никель", "Nornickel"], "ROSN": ["Роснефть", "Rosneft"],
+  "NVTK": ["Новатэк", "Novatek"], "MTSS": ["МТС", "Mobile TeleSystems"],
+  "MGNT": ["Магнит", "Magnit"], "PLZL": ["Полюс", "Polyus"]
+};
+
+function getWatchlist() {
+  const stored = localStorage.getItem('watchlist');
+  return stored ? JSON.parse(stored) : DEFAULT_WATCHLIST;
+}
+
+function renderWatchlist() {
+  const watchlist = getWatchlist();
+  const container = document.getElementById('watchlistContainer');
+  container.innerHTML = '';
+  const entries = Object.entries(watchlist);
+  if (entries.length === 0) {
+    container.innerHTML = '<div class="empty-list">Список пуст. Добавьте тикеры выше.</div>';
+    return;
+  }
+  entries.forEach(([ticker, keywords]) => {
+    const item = document.createElement('div');
+    item.className = 'watchlist-item';
+    item.innerHTML = `
+      <input type="text" value="${ticker}" class="ticker-input" maxlength="10">
+      <input type="text" value="${keywords.join(', ')}" class="keywords-input" placeholder="Ключевые слова через запятую">
+      <button class="remove-btn">×</button>
+    `;
+    container.appendChild(item);
+    item.querySelector('.remove-btn').addEventListener('click', () => {
+      item.remove();
+      updateEmptyState();
+    });
+  });
+}
+
+function updateEmptyState() {
+  const container = document.getElementById('watchlistContainer');
+  if (container.querySelectorAll('.watchlist-item').length === 0) {
+    container.innerHTML = '<div class="empty-list">Список пуст. Добавьте тикеры выше.</div>';
+  }
+}
+
+function quickAddTicker() {
+  const input = document.getElementById('quickTickerInput');
+  const feedback = document.getElementById('quickAddFeedback');
+  const ticker = input.value.trim().toUpperCase();
+  if (!ticker) { feedback.style.color = '#c62828'; feedback.textContent = 'Введите тикер'; return; }
+  const existing = document.querySelectorAll('.ticker-input');
+  for (const el of existing) {
+    if (el.value.toUpperCase() === ticker) {
+      feedback.style.color = '#f57f17'; feedback.textContent = `Тикер ${ticker} уже в списке`; return;
+    }
+  }
+  const keywords = TICKER_DICTIONARY[ticker] || [ticker];
+  const isKnown = TICKER_DICTIONARY[ticker] !== undefined;
+  const container = document.getElementById('watchlistContainer');
+  const emptyMsg = container.querySelector('.empty-list');
+  if (emptyMsg) emptyMsg.remove();
+  const item = document.createElement('div');
+  item.className = 'watchlist-item';
+  item.innerHTML = `
+    <input type="text" value="${ticker}" class="ticker-input" maxlength="10">
+    <input type="text" value="${keywords.join(', ')}" class="keywords-input" placeholder="Ключевые слова через запятую">
+    <button class="remove-btn">×</button>
+  `;
+  container.appendChild(item);
+  item.querySelector('.remove-btn').addEventListener('click', () => { item.remove(); updateEmptyState(); });
+  if (isKnown) {
+    feedback.style.color = '#2e7d32';
+    feedback.textContent = `✓ ${ticker} добавлен с авто-ключами: ${keywords.join(', ')}`;
+  } else {
+    feedback.style.color = '#f57f17';
+    feedback.textContent = `⚠ ${ticker} добавлен. Тикер не в словаре — проверьте ключевые слова.`;
+  }
+  input.value = '';
+}
+
+function saveWatchlist() {
+  const items = document.querySelectorAll('.watchlist-item');
+  const watchlist = {};
+  const errors = [];
+  items.forEach(item => {
+    const ticker = item.querySelector('.ticker-input').value.trim().toUpperCase();
+    const keywordsStr = item.querySelector('.keywords-input').value.trim();
+    if (!ticker) { errors.push('Пропущен тикер'); return; }
+    if (!keywordsStr) { errors.push(`${ticker}: не указаны ключевые слова`); return; }
+    const keywords = keywordsStr.split(',').map(k => k.trim()).filter(k => k);
+    if (keywords.length === 0) { errors.push(`${ticker}: ключевые слова пустые`); return; }
+    if (watchlist[ticker]) { errors.push(`Дубликат: ${ticker}`); return; }
+    watchlist[ticker] = keywords;
+  });
+  const statusEl = document.getElementById('status');
+  if (Object.keys(watchlist).length === 0) {
+    statusEl.className = 'status error'; statusEl.textContent = '✗ Добавьте хотя бы один тикер'; return;
+  }
+  if (errors.length > 0) {
+    statusEl.className = 'status error';
+    statusEl.innerHTML = '✗ Ошибки:<br>' + errors.map(e => `• ${e}`).join('<br>'); return;
+  }
+  localStorage.setItem('watchlist', JSON.stringify(watchlist));
+  statusEl.className = 'status success';
+  statusEl.textContent = `✓ Сохранено. Тикеров: ${Object.keys(watchlist).length}`;
+  setTimeout(() => { window.location.href = 'index.html'; }, 1000);
+}
+
+function resetToDefault() {
+  if (!confirm('Сбросить watchlist к дефолтному списку?')) return;
+  localStorage.setItem('watchlist', JSON.stringify(DEFAULT_WATCHLIST));
+  renderWatchlist();
+  document.getElementById('status').className = 'status success';
+  document.getElementById('status').textContent = '✓ Сброшено';
+}
+
+document.getElementById('quickAddBtn').addEventListener('click', quickAddTicker);
+document.getElementById('quickTickerInput').addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') quickAddTicker();
+});
+document.getElementById('quickTickerInput').addEventListener('input', (e) => {
+  const ticker = e.target.value.trim().toUpperCase();
+  const hint = document.getElementById('quickAddHint');
+  if (!ticker) { hint.innerHTML = '💡 Для популярных тикеров ключевые слова подставятся автоматически.'; return; }
+  if (TICKER_DICTIONARY[ticker]) {
+    hint.innerHTML = `<span class="known">✓ ${ticker} есть в словаре</span> — ключи подставятся`;
+  } else {
+    hint.innerHTML = `<span class="unknown">⚠ ${ticker} не в словаре</span> — добавьте ключи вручную`;
+  }
+});
+document.getElementById('saveBtn').addEventListener('click', saveWatchlist);
+document.getElementById('resetBtn').addEventListener('click', resetToDefault);
+
+renderWatchlist();

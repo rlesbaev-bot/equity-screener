@@ -1,0 +1,216 @@
+﻿const API_URL = 'https://functions.yandexcloud.net/d4e3ehsvbv2cm4ra8bcn'; // ← ЗАМЕНИТЕ
+const AUTH_TOKEN = 'xWsdsK9mP2vL8nQ4wR7tY1uB4556sderzFgt'; // ← ЗАМЕНИТЕ (должен совпадать с SECRET_TOKEN)
+
+const DEFAULT_WATCHLIST = {
+  "SBER": ["Сбербанк", "Сбер", "Sberbank"],
+  "LKOH": ["Лукойл", "Lukoil"],
+  "GAZP": ["Газпром", "Gazprom"],
+  "YNDX": ["Яндекс", "Yandex"],
+  "GMKN": ["Норникель", "Норильский никель", "Nornickel"],
+  "ROSN": ["Роснефть", "Rosneft"],
+  "NVTK": ["Новатэк", "Novatek"],
+  "MTSS": ["МТС", "Mobile TeleSystems"],
+  "MGNT": ["Магнит", "Magnit"],
+  "PLZL": ["Полюс", "Polyus"]
+};
+
+const STORAGE_DAYS = 7;
+
+const CATEGORY_LABELS = {
+  monetary_policy: 'ДКП ЦБ', dividends: 'Дивиденды', earnings: 'Отчётность',
+  regulation_tax: 'Регуляторика', sanctions_geopolitics: 'Санкции',
+  operational: 'Операционные', market_noise: 'Шум'
+};
+
+function getWatchlist() {
+  const stored = localStorage.getItem('watchlist');
+  return stored ? JSON.parse(stored) : DEFAULT_WATCHLIST;
+}
+
+function getAlerts() {
+  const stored = localStorage.getItem('alerts');
+  return stored ? JSON.parse(stored) : [];
+}
+
+function saveAlerts(alerts) {
+  const cutoff = Date.now() - STORAGE_DAYS * 24 * 60 * 60 * 1000;
+  const fresh = alerts.filter(a => new Date(a.analyzedAt).getTime() > cutoff);
+  localStorage.setItem('alerts', JSON.stringify(fresh));
+}
+
+function timeAgo(dateStr) {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'только что';
+  if (mins < 60) return `${mins} мин назад`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours} ч назад`;
+  const days = Math.floor(hours / 24);
+  return `${days} дн назад`;
+}
+
+async function fetchAnalysis() {
+  const watchlist = getWatchlist();
+  const existingAlerts = getAlerts();
+  const existingHashes = existingAlerts.map(a => a.hash).filter(Boolean);
+
+  const resp = await fetch(API_URL, {
+    method: 'POST',
+    headers: { 
+      'Content-Type': 'application/json',
+      'X-Auth-Token': AUTH_TOKEN
+    },
+    body: JSON.stringify({ watchlist, existingHashes })
+  });
+
+  if (resp.status === 403) throw new Error('Неверный токен доступа');
+  if (resp.status === 429) throw new Error('Слишком частые запросы, подождите минуту');
+  if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+  return await resp.json();
+}
+
+async function runScreening() {
+  const statusBar = document.getElementById('statusBar');
+  const alertsList = document.getElementById('alertsList');
+  
+  statusBar.style.display = 'block';
+  statusBar.className = 'status-bar';
+  statusBar.innerHTML = '<span class="spinner"></span>Анализируем новости...';
+  
+  try {
+    const data = await fetchAnalysis();
+    
+    const existing = getAlerts();
+    const existingHashes = new Set(existing.map(a => a.hash));
+    const newAlerts = data.alerts.filter(a => !existingHashes.has(a.hash));
+    const merged = [...newAlerts, ...existing];
+    saveAlerts(merged);
+    
+    if (data.summary) {
+      localStorage.setItem('lastSummary', JSON.stringify({
+        summary: data.summary,
+        portfolioScore: data.portfolioScore,
+        updatedAt: new Date().toISOString()
+      }));
+    }
+    
+    const now = new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+    if (data.errors && data.errors.length > 0) {
+      statusBar.className = 'status-bar partial';
+      statusBar.textContent = `⚠ Обновлено в ${now}. Ошибок анализа: ${data.errors.length}`;
+    } else {
+      statusBar.className = 'status-bar';
+      statusBar.textContent = `✓ Обновлено в ${now}. Новых новостей: ${newAlerts.length}`;
+    }
+    
+    document.getElementById('lastUpdate').textContent = `Обновлено ${timeAgo(new Date().toISOString())}`;
+    renderSummary();
+    renderAlerts();
+    
+  } catch (e) {
+    console.error('Screening error:', e);
+    const cached = getAlerts();
+    if (cached.length > 0) {
+      statusBar.style.display = 'block';
+      statusBar.className = 'status-bar offline';
+      statusBar.textContent = `⚠ Нет связи. Показаны данные, обновлённые ${timeAgo(cached[0].analyzedAt)}`;
+      renderSummary();
+      renderAlerts();
+    } else {
+      statusBar.className = 'status-bar error';
+      statusBar.textContent = `❌ Ошибка: ${e.message}. Нажмите «🔄» чтобы повторить.`;
+      alertsList.innerHTML = '<div class="empty">Нет данных. Проверьте соединение и повторите.</div>';
+    }
+  }
+}
+
+function renderSummary() {
+  const summaryDiv = document.getElementById('summary');
+  const scoreDiv = document.getElementById('portfolioScore');
+  const tickersDiv = document.getElementById('summaryTickers');
+  
+  const stored = localStorage.getItem('lastSummary');
+  if (!stored) { summaryDiv.style.display = 'none'; return; }
+  
+  const { summary, portfolioScore, updatedAt } = JSON.parse(stored);
+  
+  if (Date.now() - new Date(updatedAt).getTime() > 24 * 60 * 60 * 1000) {
+    summaryDiv.style.display = 'none'; return;
+  }
+  
+  summaryDiv.style.display = 'flex';
+  const scoreClass = portfolioScore > 1 ? 'pos' : portfolioScore < -1 ? 'neg' : 'neu';
+  scoreDiv.className = `summary-score ${scoreClass}`;
+  scoreDiv.textContent = `${portfolioScore > 0 ? '+' : ''}${portfolioScore}`;
+  
+  tickersDiv.innerHTML = Object.entries(summary)
+    .sort((a, b) => b[1] - a[1])
+    .map(([ticker, score]) => {
+      const cls = score > 1 ? 'pos' : score < -1 ? 'neg' : 'neu';
+      return `<span class="summary-ticker ${cls}">${ticker} ${score > 0 ? '+' : ''}${score}</span>`;
+    }).join('');
+}
+
+function renderAlerts() {
+  const allAlerts = getAlerts();
+  const filterTicker = document.getElementById('filterTicker').value;
+  const filterCat = document.getElementById('filterCategory').value;
+  const filterSig = document.getElementById('filterSignificance').value;
+
+  let filtered = allAlerts;
+  if (filterTicker !== 'all') filtered = filtered.filter(a => a.ticker === filterTicker);
+  if (filterCat !== 'all') filtered = filtered.filter(a => a.category === filterCat);
+  if (filterSig === 'significant') filtered = filtered.filter(a => Math.abs(a.score) >= 3);
+
+  const container = document.getElementById('alertsList');
+  if (filtered.length === 0) {
+    container.innerHTML = '<div class="empty">Нет новостей по заданным фильтрам</div>';
+    return;
+  }
+
+  container.innerHTML = filtered.map(a => {
+    const scoreClass = a.score > 2 ? 'pos' : a.score < -2 ? 'neg' : 'neu';
+    const cardClass = a.score > 2 ? 'positive' : a.score < -2 ? 'negative' : 'neutral';
+    const catLabel = CATEGORY_LABELS[a.category] || a.category;
+    const dateStr = a.date ? new Date(a.date).toLocaleString('ru-RU') : '';
+
+    return `
+      <div class="alert-card ${cardClass}">
+        <div class="alert-top">
+          <span class="ticker">${a.ticker}</span>
+          <span class="score ${scoreClass}">${a.score > 0 ? '+' : ''}${a.score}</span>
+        </div>
+        <div class="badges">
+          <span class="category-badge">${catLabel}</span>
+          <span class="source-badge">${a.source}</span>
+        </div>
+        <div class="news-title"><a href="${a.newsLink}" target="_blank">${a.newsTitle}</a></div>
+        <div class="reason">${a.reason}</div>
+        <div class="source-line">${dateStr} · ${timeAgo(a.analyzedAt)}</div>
+      </div>
+    `;
+  }).join('');
+
+  const tickerSelect = document.getElementById('filterTicker');
+  const uniqueTickers = [...new Set(allAlerts.map(a => a.ticker))].sort();
+  const currentValue = tickerSelect.value;
+  tickerSelect.innerHTML = '<option value="all">Все тикеры</option>' +
+    uniqueTickers.map(t => `<option value="${t}">${t}</option>`).join('');
+  tickerSelect.value = currentValue;
+}
+
+document.getElementById('btnRefresh').addEventListener('click', runScreening);
+document.getElementById('filterTicker').addEventListener('change', renderAlerts);
+document.getElementById('filterCategory').addEventListener('change', renderAlerts);
+document.getElementById('filterSignificance').addEventListener('change', renderAlerts);
+document.getElementById('btnSettings').addEventListener('click', () => {
+  window.location.href = 'settings.html';
+});
+
+const cached = getAlerts();
+if (cached.length > 0) {
+  renderSummary();
+  renderAlerts();
+  document.getElementById('lastUpdate').textContent = 
+    `Данные за ${timeAgo(cached[0].analyzedAt)} · нажмите 🔄 для обновления`;
+}
