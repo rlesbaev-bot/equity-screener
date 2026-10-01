@@ -1,25 +1,25 @@
-const API_URL = 'https://functions.yandexcloud.net/d4e3ehsvbv2cm4ra8bcn'; // < ЗАМЕНИТЕ
-const AUTH_TOKEN = 'xWsdsK9mP2vL8nQ4wR7tY1uB4556sderzFgt'; // < ЗАМЕНИТЕ (должен совпадать с SECRET_TOKEN)
+const API_URL = 'https://functions.yandexcloud.net/d4e3ehsvbv2cm4ra8bcn'; // < Г‡ГЂГЊГ…ГЌГ€Г’Г…
+const AUTH_TOKEN = 'xWsdsK9mP2vL8nQ4wR7tY1uB4556sderzFgt'; // < Г‡ГЂГЊГ…ГЌГ€Г’Г… (Г¤Г®Г«Г¦ГҐГ­ Г±Г®ГўГЇГ Г¤Г ГІГј Г± SECRET_TOKEN)
 
 const DEFAULT_WATCHLIST = {
-  "SBER": ["Сбербанк", "Сбер", "Sberbank"],
-  "LKOH": ["Лукойл", "Lukoil"],
-  "GAZP": ["Газпром", "Gazprom"],
-  "YNDX": ["Яндекс", "Yandex"],
-  "GMKN": ["Норникель", "Норильский никель", "Nornickel"],
-  "ROSN": ["Роснефть", "Rosneft"],
-  "NVTK": ["Новатэк", "Novatek"],
-  "MTSS": ["МТС", "Mobile TeleSystems"],
-  "MGNT": ["Магнит", "Magnit"],
-  "PLZL": ["Полюс", "Polyus"]
+  "SBER": ["Г‘ГЎГҐГ°ГЎГ Г­ГЄ", "Г‘ГЎГҐГ°", "Sberbank"],
+  "LKOH": ["Г‹ГіГЄГ®Г©Г«", "Lukoil"],
+  "GAZP": ["ГѓГ Г§ГЇГ°Г®Г¬", "Gazprom"],
+  "YNDX": ["ГџГ­Г¤ГҐГЄГ±", "Yandex"],
+  "GMKN": ["ГЌГ®Г°Г­ГЁГЄГҐГ«Гј", "ГЌГ®Г°ГЁГ«ГјГ±ГЄГЁГ© Г­ГЁГЄГҐГ«Гј", "Nornickel"],
+  "ROSN": ["ГђГ®Г±Г­ГҐГґГІГј", "Rosneft"],
+  "NVTK": ["ГЌГ®ГўГ ГІГЅГЄ", "Novatek"],
+  "MTSS": ["ГЊГ’Г‘", "Mobile TeleSystems"],
+  "MGNT": ["ГЊГ ГЈГ­ГЁГІ", "Magnit"],
+  "PLZL": ["ГЏГ®Г«ГѕГ±", "Polyus"]
 };
 
 const STORAGE_DAYS = 7;
 
 const CATEGORY_LABELS = {
-  monetary_policy: 'ДКП ЦБ', dividends: 'Дивиденды', earnings: 'Отчётность',
-  regulation_tax: 'Регуляторика', sanctions_geopolitics: 'Санкции',
-  operational: 'Операционные', market_noise: 'Шум'
+  monetary_policy: 'Г„ГЉГЏ Г–ГЃ', dividends: 'Г„ГЁГўГЁГ¤ГҐГ­Г¤Г»', earnings: 'ГЋГІГ·ВёГІГ­Г®Г±ГІГј',
+  regulation_tax: 'ГђГҐГЈГіГ«ГїГІГ®Г°ГЁГЄГ ', sanctions_geopolitics: 'Г‘Г Г­ГЄГ¶ГЁГЁ',
+  operational: 'ГЋГЇГҐГ°Г Г¶ГЁГ®Г­Г­Г»ГҐ', market_noise: 'ГГіГ¬'
 };
 
 function getWatchlist() {
@@ -41,12 +41,12 @@ function saveAlerts(alerts) {
 function timeAgo(dateStr) {
   const diff = Date.now() - new Date(dateStr).getTime();
   const mins = Math.floor(diff / 60000);
-  if (mins < 1) return 'только что';
-  if (mins < 60) return `${mins} мин назад`;
+  if (mins < 1) return 'ГІГ®Г«ГјГЄГ® Г·ГІГ®';
+  if (mins < 60) return `${mins} Г¬ГЁГ­ Г­Г Г§Г Г¤`;
   const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours} ч назад`;
+  if (hours < 24) return `${hours} Г· Г­Г Г§Г Г¤`;
   const days = Math.floor(hours / 24);
-  return `${days} дн назад`;
+  return `${days} Г¤Г­ Г­Г Г§Г Г¤`;
 }
 
 async function fetchAnalysis() {
@@ -63,8 +63,8 @@ async function fetchAnalysis() {
     body: JSON.stringify({ watchlist, existingHashes })
   });
 
-  if (resp.status === 403) throw new Error('Неверный токен доступа');
-  if (resp.status === 429) throw new Error('Слишком частые запросы, подождите минуту');
+  if (resp.status === 403) throw new Error('ГЌГҐГўГҐГ°Г­Г»Г© ГІГ®ГЄГҐГ­ Г¤Г®Г±ГІГіГЇГ ');
+  if (resp.status === 429) throw new Error('Г‘Г«ГЁГёГЄГ®Г¬ Г·Г Г±ГІГ»ГҐ Г§Г ГЇГ°Г®Г±Г», ГЇГ®Г¤Г®Г¦Г¤ГЁГІГҐ Г¬ГЁГ­ГіГІГі');
   if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
   return await resp.json();
 }
@@ -75,7 +75,7 @@ async function runScreening() {
   
   statusBar.style.display = 'block';
   statusBar.className = 'status-bar';
-  statusBar.innerHTML = '<span class="spinner"></span>Анализируем новости...';
+  statusBar.innerHTML = '<span class="spinner"></span>ГЂГ­Г Г«ГЁГ§ГЁГ°ГіГҐГ¬ Г­Г®ГўГ®Г±ГІГЁ...';
   
   try {
     const data = await fetchAnalysis();
@@ -97,13 +97,13 @@ async function runScreening() {
     const now = new Date().toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
     if (data.errors && data.errors.length > 0) {
       statusBar.className = 'status-bar partial';
-      statusBar.textContent = `? Обновлено в ${now}. Ошибок анализа: ${data.errors.length}`;
+      statusBar.textContent = `? ГЋГЎГ­Г®ГўГ«ГҐГ­Г® Гў ${now}. ГЋГёГЁГЎГ®ГЄ Г Г­Г Г«ГЁГ§Г : ${data.errors.length}`;
     } else {
       statusBar.className = 'status-bar';
-      statusBar.textContent = `? Обновлено в ${now}. Новых новостей: ${newAlerts.length}`;
+      statusBar.textContent = `? ГЋГЎГ­Г®ГўГ«ГҐГ­Г® Гў ${now}. ГЌГ®ГўГ»Гµ Г­Г®ГўГ®Г±ГІГҐГ©: ${newAlerts.length}`;
     }
     
-    document.getElementById('lastUpdate').textContent = `Обновлено ${timeAgo(new Date().toISOString())}`;
+    document.getElementById('lastUpdate').textContent = `ГЋГЎГ­Г®ГўГ«ГҐГ­Г® ${timeAgo(new Date().toISOString())}`;
     renderSummary();
     renderAlerts();
     
@@ -113,13 +113,13 @@ async function runScreening() {
     if (cached.length > 0) {
       statusBar.style.display = 'block';
       statusBar.className = 'status-bar offline';
-      statusBar.textContent = `? Нет связи. Показаны данные, обновлённые ${timeAgo(cached[0].analyzedAt)}`;
+      statusBar.textContent = `? ГЌГҐГІ Г±ГўГїГ§ГЁ. ГЏГ®ГЄГ Г§Г Г­Г» Г¤Г Г­Г­Г»ГҐ, Г®ГЎГ­Г®ГўГ«ВёГ­Г­Г»ГҐ ${timeAgo(cached[0].analyzedAt)}`;
       renderSummary();
       renderAlerts();
     } else {
       statusBar.className = 'status-bar error';
-      statusBar.textContent = `? Ошибка: ${e.message}. Нажмите «??» чтобы повторить.`;
-      alertsList.innerHTML = '<div class="empty">Нет данных. Проверьте соединение и повторите.</div>';
+      statusBar.textContent = `? ГЋГёГЁГЎГЄГ : ${e.message}. ГЌГ Г¦Г¬ГЁГІГҐ В«??В» Г·ГІГ®ГЎГ» ГЇГ®ГўГІГ®Г°ГЁГІГј.`;
+      alertsList.innerHTML = '<div class="empty">ГЌГҐГІ Г¤Г Г­Г­Г»Гµ. ГЏГ°Г®ГўГҐГ°ГјГІГҐ Г±Г®ГҐГ¤ГЁГ­ГҐГ­ГЁГҐ ГЁ ГЇГ®ГўГІГ®Г°ГЁГІГҐ.</div>';
     }
   }
 }
@@ -164,7 +164,7 @@ function renderAlerts() {
 
   const container = document.getElementById('alertsList');
   if (filtered.length === 0) {
-    container.innerHTML = '<div class="empty">Нет новостей по заданным фильтрам</div>';
+    container.innerHTML = '<div class="empty">ГЌГҐГІ Г­Г®ГўГ®Г±ГІГҐГ© ГЇГ® Г§Г Г¤Г Г­Г­Г»Г¬ ГґГЁГ«ГјГІГ°Г Г¬</div>';
     return;
   }
 
@@ -186,7 +186,7 @@ function renderAlerts() {
         </div>
         <div class="news-title"><a href="${a.newsLink}" target="_blank">${a.newsTitle}</a></div>
         <div class="reason">${a.reason}</div>
-        <div class="source-line">${dateStr} · ${timeAgo(a.analyzedAt)}</div>
+        <div class="source-line">${dateStr} В· ${timeAgo(a.analyzedAt)}</div>
       </div>
     `;
   }).join('');
@@ -194,7 +194,7 @@ function renderAlerts() {
   const tickerSelect = document.getElementById('filterTicker');
   const uniqueTickers = [...new Set(allAlerts.map(a => a.ticker))].sort();
   const currentValue = tickerSelect.value;
-  tickerSelect.innerHTML = '<option value="all">Все тикеры</option>' +
+  tickerSelect.innerHTML = '<option value="all">Г‚Г±ГҐ ГІГЁГЄГҐГ°Г»</option>' +
     uniqueTickers.map(t => `<option value="${t}">${t}</option>`).join('');
   tickerSelect.value = currentValue;
 }
@@ -212,5 +212,5 @@ if (cached.length > 0) {
   renderSummary();
   renderAlerts();
   document.getElementById('lastUpdate').textContent = 
-    `Данные за ${timeAgo(cached[0].analyzedAt)} · нажмите ?? для обновления`;
+    `Г„Г Г­Г­Г»ГҐ Г§Г  ${timeAgo(cached[0].analyzedAt)} В· Г­Г Г¦Г¬ГЁГІГҐ ?? Г¤Г«Гї Г®ГЎГ­Г®ГўГ«ГҐГ­ГЁГї`;
 }
