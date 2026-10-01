@@ -1,0 +1,14 @@
+{
+  "name": "RU Equity Screener",
+  "short_name": "EquityScreener",
+  "description": "Скрининг новостей по акциям РФ",
+  "start_url": "/equity-screener/index.html",
+  "display": "standalone",
+  "background_color": "#1a1a2e",
+  "theme_color": "#1a1a2e",
+  "orientation": "portrait",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
