@@ -1,6 +1,5 @@
 ﻿const API_URL = 'https://functions.yandexcloud.net/d4eej7tb7kcp63odjnkg'; // ← ЗАМЕНИТЕ
 const AUTH_TOKEN = 'xWsdsK9mP2vL8nQ4wR7tY1uB4556sderzFgt'; // ← ЗАМЕНИТЕ (должен совпадать с SECRET_TOKEN)
-
 const DEFAULT_WATCHLIST = {
   "SBER": ["Сбербанк", "Сбер", "Sberbank"],
   "LKOH": ["Лукойл", "Lukoil"],
@@ -89,6 +88,7 @@ async function runScreening() {
     if (data.summary) {
       localStorage.setItem('lastSummary', JSON.stringify({
         summary: data.summary,
+        categorySummary: data.categorySummary,
         portfolioScore: data.portfolioScore,
         updatedAt: new Date().toISOString()
       }));
@@ -104,7 +104,7 @@ async function runScreening() {
     }
     
     document.getElementById('lastUpdate').textContent = `Обновлено ${timeAgo(new Date().toISOString())}`;
-    renderSummary();
+    renderSummary(data);
     renderAlerts();
     
   } catch (e) {
@@ -124,15 +124,27 @@ async function runScreening() {
   }
 }
 
-function renderSummary() {
+function renderSummary(data) {
   const summaryDiv = document.getElementById('summary');
   const scoreDiv = document.getElementById('portfolioScore');
   const tickersDiv = document.getElementById('summaryTickers');
   
-  const stored = localStorage.getItem('lastSummary');
-  if (!stored) { summaryDiv.style.display = 'none'; return; }
+  let summary, categorySummary, portfolioScore, updatedAt;
   
-  const { summary, portfolioScore, updatedAt } = JSON.parse(stored);
+  if (data && data.summary) {
+    summary = data.summary;
+    categorySummary = data.categorySummary;
+    portfolioScore = data.portfolioScore;
+    updatedAt = new Date().toISOString();
+  } else {
+    const stored = localStorage.getItem('lastSummary');
+    if (!stored) { summaryDiv.style.display = 'none'; return; }
+    const parsed = JSON.parse(stored);
+    summary = parsed.summary;
+    categorySummary = parsed.categorySummary || {};
+    portfolioScore = parsed.portfolioScore;
+    updatedAt = parsed.updatedAt;
+  }
   
   if (Date.now() - new Date(updatedAt).getTime() > 24 * 60 * 60 * 1000) {
     summaryDiv.style.display = 'none'; return;
@@ -149,6 +161,19 @@ function renderSummary() {
       const cls = score > 1 ? 'pos' : score < -1 ? 'neg' : 'neu';
       return `<span class="summary-ticker ${cls}">${ticker} ${score > 0 ? '+' : ''}${score}</span>`;
     }).join('');
+
+  // Блок с категориями
+  if (categorySummary && Object.keys(categorySummary).length > 0) {
+    const catHtml = Object.entries(categorySummary)
+      .sort((a, b) => b[1] - a[1])
+      .map(([cat, score]) => {
+        const cls = score > 1 ? 'pos' : score < -1 ? 'neg' : 'neu';
+        const label = CATEGORY_LABELS[cat] || cat;
+        return `<span class="summary-ticker ${cls}" style="margin-top:4px;">📁 ${label}: ${score > 0 ? '+' : ''}${score}</span>`;
+      }).join('');
+      
+    tickersDiv.innerHTML += `<div style="width:100%; border-top:1px solid #eee; margin-top:6px; padding-top:6px; display:flex; flex-wrap:wrap; gap:6px;">${catHtml}</div>`;
+  }
 }
 
 function renderAlerts() {
@@ -161,12 +186,14 @@ function renderAlerts() {
   if (filterTicker !== 'all') filtered = filtered.filter(a => a.ticker === filterTicker);
   if (filterCat !== 'all') filtered = filtered.filter(a => a.category === filterCat);
   if (filterSig === 'significant') filtered = filtered.filter(a => Math.abs(a.score) >= 3);
-  // Сортируем: сначала по абсолютной величине оценки (по убыванию), затем по времени (новые сверху)
+
+  // Умная сортировка: сначала самые значимые по |оценке|, потом по времени
   filtered.sort((a, b) => {
     const scoreDiff = Math.abs(b.score) - Math.abs(a.score);
     if (scoreDiff !== 0) return scoreDiff;
     return new Date(b.analyzedAt) - new Date(a.analyzedAt);
   });
+
   const container = document.getElementById('alertsList');
   if (filtered.length === 0) {
     container.innerHTML = '<div class="empty">Нет новостей по заданным фильтрам</div>';
