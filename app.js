@@ -163,7 +163,10 @@ function renderSummary(data) {
     }).join('');
 
   // Блок с категориями
+    // Блок с категориями
   if (categorySummary && Object.keys(categorySummary).length > 0) {
+    console.log('Category summary:', categorySummary); // отладка
+    
     const catHtml = Object.entries(categorySummary)
       .sort((a, b) => b[1] - a[1])
       .map(([cat, score]) => {
@@ -173,6 +176,8 @@ function renderSummary(data) {
       }).join('');
       
     tickersDiv.innerHTML += `<div style="width:100%; border-top:1px solid #eee; margin-top:6px; padding-top:6px; display:flex; flex-wrap:wrap; gap:6px;">${catHtml}</div>`;
+  } else {
+    console.log('No category summary available');
   }
 }
 
