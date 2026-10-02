@@ -161,7 +161,12 @@ function renderAlerts() {
   if (filterTicker !== 'all') filtered = filtered.filter(a => a.ticker === filterTicker);
   if (filterCat !== 'all') filtered = filtered.filter(a => a.category === filterCat);
   if (filterSig === 'significant') filtered = filtered.filter(a => Math.abs(a.score) >= 3);
-
+  // Сортируем: сначала по абсолютной величине оценки (по убыванию), затем по времени (новые сверху)
+  filtered.sort((a, b) => {
+    const scoreDiff = Math.abs(b.score) - Math.abs(a.score);
+    if (scoreDiff !== 0) return scoreDiff;
+    return new Date(b.analyzedAt) - new Date(a.analyzedAt);
+  });
   const container = document.getElementById('alertsList');
   if (filtered.length === 0) {
     container.innerHTML = '<div class="empty">Нет новостей по заданным фильтрам</div>';
